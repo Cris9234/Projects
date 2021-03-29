@@ -43,17 +43,12 @@ def FindLocalMin(numbers):
 
 # %%
 # The data_clean function can be divided into three steps:
-# 1) calculates EMA (exponential moving average) considering different
-# amounts of data; it has the characteristic of taking into account
-# more the recent values than previous ones. Furthermore, the original
-# data contains outliers that differ significantly from the others,
-# so a weight is considered in such a way that the farther the
-# value is from the moving average, the less it is considered
+# 1) calculates EMA (exponential moving average) considering different amounts of data; it has the characteristic of taking into account 
+# more the recent values than previous ones. Furthermore, the original data contains outliers that differ significantly from the others,
+# so a weight is considered in such a way that the farther the value is from the moving average, the less it is considered
 # (0.1 is a small constant offset used to avoid division by zero);
 # 2) finds the ideal amount of EMA data via the MSE method;
-#
-# 3) constructs two adjacent graphs representing the original
-# data superimposed on EMA (left) and the MSE values for the different
+# 3) constructs two adjacent graphs representing the original data superimposed on EMA (left) and the MSE values for the different
 # amounts of data and the value in red for the ideal one (right).
 
 def data_clean(x, y, x_label, y_label, graphs):
@@ -106,10 +101,8 @@ def conf_mat(test, pred):
 
 #%%
 
-# I apply the data_clean function on the 'humidity', 'smoke' and 'temperature'
-# parameters no taking into account the 'co' and 'gpl' parameters as,
-# together with the 'smoke' parameter, they have a covariance value
-# close to 1 as proof which are highly correlated.
+# I apply the data_clean function on the 'humidity', 'smoke' and 'temperature' parameters no taking into account the 'co' and 'gpl' parameters as,
+# together with the 'smoke' parameter, they have a covariance value close to 1 as proof which are highly correlated.
 
 # dc_1_co = data_clean(dev_1.time, dev_1.co, x_label='time', y_label='co', graphs=True)
 dc_1_hum = data_clean(dev_1.time, dev_1.humidity, x_label='time', y_label='humidity [ppm]', graphs=True)
@@ -133,9 +126,7 @@ df = df.sort_values(by='time', ascending=True)
 df.index = range(0, len(df))
 
 # %%
-# I consider an increase in parameters and the activation of the
-# light and motion sensor as the fact that there is at least one
-# person near the device.
+# I consider an increase in parameters and the activation of the light and motion sensor as the fact that there is at least one person near the device.
 name_col = df.columns[1:]
 
 for i in name_col[:-1]:
@@ -163,8 +154,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random
 
 # %%
 # RANDOM FORES
-# I look for the optimal number of estimators that allows me to
-# lower the OOB errors as much as possible.
+# I look for the optimal number of estimators that allows me to lower the OOB errors as much as possible.
 
 oob_error = []
 rn_est = list(range(30, 205, 5))
@@ -289,15 +279,11 @@ plt.show()
 
 #%%
 
-# Another way to implement this program would be to consider
-# the number of increasing parameters such as, if they are more
-# than a certain percentage of the number of parameters, the device
-# considers that fact to be someone's presence. Each parameter
-# must be assigned a probability such as, if the light or motion
-# sensor is activated, I'm sure there is someone near the device,
+# Another way to implement this program would be to consider the number of increasing parameters such as, if they are more
+# than a certain percentage of the number of parameters, the device considers that fact to be someone's presence. Each parameter
+# must be assigned a probability such as, if the light or motion sensor is activated, I'm sure there is someone near the device,
 # so I can assign them a P = 1.
-# For the CO sensor a different one can be assigned because
-# increasing that parameter may mean that the heating system is faulty.
+# For the CO sensor a different one can be assigned because increasing that parameter may mean that the heating system is faulty.
 # This approach can be applied for the other sensors:
 # - smoke and temperature sensors: it can mean that something is taking fire;
 # - LPG sensor: if the device is mounted on an LPG car, it may mean that the
