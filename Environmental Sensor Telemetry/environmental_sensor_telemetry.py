@@ -23,6 +23,7 @@ print(data.corr())
 
 
 # %%
+
 dev_1 = data[data.device == 'device 1']
 dev_2 = data[data.device == 'device 2']
 dev_3 = data[data.device == 'device 3']
@@ -40,16 +41,6 @@ def FindLocalMin(numbers):
         if numbers[length - 1] <= numbers[length - 2]:
             minima.append(numbers[length - 1])
     return min(minima)
-
-# %%
-# The data_clean function can be divided into three steps:
-# 1) calculates EMA (exponential moving average) considering different amounts of data; it has the characteristic of taking into account 
-# more the recent values than previous ones. Furthermore, the original data contains outliers that differ significantly from the others,
-# so a weight is considered in such a way that the farther the value is from the moving average, the less it is considered
-# (0.1 is a small constant offset used to avoid division by zero);
-# 2) finds the ideal amount of EMA data via the MSE method;
-# 3) constructs two adjacent graphs representing the original data superimposed on EMA (left) and the MSE values for the different
-# amounts of data and the value in red for the ideal one (right).
 
 def data_clean(x, y, x_label, y_label, graphs):
     MSE = []
@@ -85,8 +76,6 @@ def data_clean(x, y, x_label, y_label, graphs):
 
     return best_ema
 
-# %%
-
 
 def conf_mat(test, pred):
     print('Accuracy=', metrics.accuracy_score(test, pred))
@@ -99,10 +88,7 @@ def conf_mat(test, pred):
     plt.show()
 
 
-#%%
-
-# I apply the data_clean function on the 'humidity', 'smoke' and 'temperature' parameters no taking into account the 'co' and 'gpl' parameters as,
-# together with the 'smoke' parameter, they have a covariance value close to 1 as proof which are highly correlated.
+# %%
 
 # dc_1_co = data_clean(dev_1.time, dev_1.co, x_label='time', y_label='co', graphs=True)
 dc_1_hum = data_clean(dev_1.time, dev_1.humidity, x_label='time', y_label='humidity [ppm]', graphs=True)
@@ -110,7 +96,9 @@ dc_1_hum = data_clean(dev_1.time, dev_1.humidity, x_label='time', y_label='humid
 dc_1_smoke = data_clean(dev_1.time, dev_1.smoke, x_label='time', y_label='smoke [ppm]', graphs=True)
 dc_1_temp = data_clean(dev_1.time, dev_1.temp, x_label='time', y_label='temp [°F]', graphs=True)
 
-#%%
+
+# %%
+
 df = pd.DataFrame({'time': dev_1.time,
                    # 'co': dc_1_co,
                    'humidity': dc_1_hum,
@@ -125,8 +113,9 @@ df = df.sample(frac=.05, random_state=154)
 df = df.sort_values(by='time', ascending=True)
 df.index = range(0, len(df))
 
+
 # %%
-# I consider an increase in parameters and the activation of the light and motion sensor as the fact that there is at least one person near the device.
+
 name_col = df.columns[1:]
 
 for i in name_col[:-1]:
@@ -152,9 +141,9 @@ for i in name_col[:-1]:
 X, y = df[name_col[:-1]], df[name_col[-1]]
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=123)
 
+
 # %%
 # RANDOM FORES
-# I look for the optimal number of estimators that allows me to lower the OOB errors as much as possible.
 
 oob_error = []
 rn_est = list(range(30, 205, 5))
@@ -167,7 +156,9 @@ for i in rn_est:
 
 best_n_est = rn_est[oob_error.index(min(oob_error))]
 
+
 # %%
+
 plt.plot(rn_est, oob_error)
 plt.plot(best_n_est, min(oob_error), marker='o', color='red')
 plt.xlabel('n estimators')
@@ -203,9 +194,9 @@ plt.ylabel('Relative importance')
 plt.title('Feature Importance')
 plt.show()
 
-# Then I apply the Random Forest model to the other two devices
+
 # %%
-# APPLY CLASSIFICATOR ON THE 2ND DATASET
+# APPLICATION OF THE CLASSIFIER ON THE SECOND DATASET
 
 # dc_2_co = data_clean(dev_2.time, dev_2.co, x_label='time', y_label='co', graphs=False)
 dc_2_hum = data_clean(dev_2.time, dev_2.humidity, x_label='time', y_label='humidity', graphs=False)
@@ -213,7 +204,9 @@ dc_2_hum = data_clean(dev_2.time, dev_2.humidity, x_label='time', y_label='humid
 dc_2_smoke = data_clean(dev_2.time, dev_2.smoke, x_label='time', y_label='smoke', graphs=False)
 dc_2_temp = data_clean(dev_2.time, dev_2.temp, x_label='time', y_label='temp', graphs=False)
 
+
 # %%
+
 df_2 = pd.DataFrame({'time': dev_2.time,
                      # 'co': dc_2_co,
                      'humidity': dc_2_hum,
@@ -228,11 +221,14 @@ df_2 = df_2.sample(frac=0.5, random_state=154)
 df_2 = df_2.sort_values(by='time', ascending=True)
 df_2.index = range(0, len(df_2))
 
+
 # %%
+
 y_RF_pred_2 = RF_classifier.predict(df_2[name_col[:-1]])
 
 
 # %%
+
 plt.figure(figsize=(20, 10))
 plt.plot(df_2.time, y_RF_pred_2, linewidth=3)
 plt.xlabel('time')
@@ -241,8 +237,9 @@ plt.yticks([0, 1])
 plt.ylim(0, 1.1)
 plt.show()
 
+
 # %%
-# APPLY CLASSIFICATOR ON THE 3TH DATASET
+# APPLICATION OF THE CLASSIFIER ON THE THIRD DATASET
 
 # dc_3_co = data_clean(dev_3.time, dev_3.co, x_label='time', y_label='co', graphs=False)
 dc_3_hum = data_clean(dev_3.time, dev_3.humidity, x_label='time', y_label='humidity', graphs=False)
@@ -250,7 +247,9 @@ dc_3_hum = data_clean(dev_3.time, dev_3.humidity, x_label='time', y_label='humid
 dc_3_smoke = data_clean(dev_3.time, dev_3.smoke, x_label='time', y_label='smoke', graphs=False)
 dc_3_temp = data_clean(dev_3.time, dev_3.temp, x_label='time', y_label='temp', graphs=False)
 
+
 # %%
+
 df_3 = pd.DataFrame({'time': dev_3.time,
                      # 'co': dc_3_co,
                      'humidity': dc_3_hum,
@@ -265,10 +264,14 @@ df_3 = df_3.sample(frac=0.5, random_state=154)
 df_3 = df_3.sort_values(by='time', ascending=True)
 df_3.index = range(0, len(df_3))
 
-# %%
-y_RF_pred_3 = RF_classifier.predict(df_3[name_col[:-1]])
 
 # %%
+
+y_RF_pred_3 = RF_classifier.predict(df_3[name_col[:-1]])
+
+
+# %%
+
 plt.figure(figsize=(20, 10))
 plt.plot(df_3.time, y_RF_pred_3, linewidth=3)
 plt.xlabel('time')
@@ -277,14 +280,3 @@ plt.yticks([0, 1])
 plt.ylim(0, 1.1)
 plt.show()
 
-#%%
-
-# Another way to implement this program would be to consider the number of increasing parameters such as, if they are more
-# than a certain percentage of the number of parameters, the device considers that fact to be someone's presence. Each parameter
-# must be assigned a probability such as, if the light or motion sensor is activated, I'm sure there is someone near the device,
-# so I can assign them a P = 1.
-# For the CO sensor a different one can be assigned because increasing that parameter may mean that the heating system is faulty.
-# This approach can be applied for the other sensors:
-# - smoke and temperature sensors: it can mean that something is taking fire;
-# - LPG sensor: if the device is mounted on an LPG car, it may mean that the
-# LPG cylinder is leaking gas.
