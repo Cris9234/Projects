@@ -25,8 +25,8 @@ I start by analyzing the data set checking if there are missing values and if th
   
 ```{r}
 library(readr)
-zoo <- read.csv("./Progetto/zoo.csv")
-class <- read.csv("./Progetto/class.csv")
+zoo <- read.csv("./Animal Classification/zoo.csv")
+class <- read.csv("./Animal Classification/class.csv")
 sum(is.na(zoo))
 str(zoo)
 ```
