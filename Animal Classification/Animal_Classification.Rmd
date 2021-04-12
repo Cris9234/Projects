@@ -1,0 +1,182 @@
+---
+title: "Animal Classification"
+author: "Angeli Cristiano"
+date: "01/09/2020"
+output:
+  html_document: 
+    fig_height: 4
+    fig_width: 6
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Abstract
+The data set contains 101 observations (animals) and 18 predictors (animal characteristics) including "class_type" (1 = Mammal, 2 = Bird, 3 = Reptile, 4 = Fish, 5 = Amphibian, 6 = Bug, 7 = Invertebrate).
+The goal is to find a model that classifies animals as correctly as possible.
+
+
+# Introduction
+
+I start by analyzing the data set checking if there are missing values and if the types of predictors are correct.
+
+  
+```{r}
+library(readr)
+zoo <- read.csv("./Progetto/zoo.csv")
+class <- read.csv("./Progetto/class.csv")
+sum(is.na(zoo))
+str(zoo)
+```
+
+I proceed with modifying the characteristics to make them factors and excluding the "animal name" predictor since it is not useful for this classification.
+
+
+```{r}
+B <- as.character(class$Class_Type)
+for (i in 1:max(class$Class_Number)) {
+  zoo$class_type[zoo$class_type == i] <- B[i]
+}
+
+zoo[,2:18] <- data.frame(lapply(zoo[,2:18], as.factor))
+df.zoo <- data.frame(zoo[, 2:18])
+#for (j in colnames(df.zoo)) {
+ # df.zoo[,j] <- lapply(df.zoo[,j], as.factor)
+#type.convert(df.zoo, as.is = FALSE)
+#}
+attach(df.zoo)
+```
+
+
+# KNN
+In this section I will find the number of nearest neighbors $k$ such that it classifies the training set well and gives the best accuracy on the test set.
+
+Since the original data set is small, I use the K-fold repeated cross validation method choosing $K = 10$ and repeat this process three times.
+
+```{r}
+library(caret)
+trCont.knn <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+set.seed(123)
+knn.fit <- train(class_type ~., method = "knn", tuneGrid = expand.grid(k = 1:5), trControl = trCont.knn,
+             metric = "Accuracy", data = df.zoo)
+knn.fit
+```
+
+Graphically, the accuracy trend looks like this:
+
+```{r}
+ggplot(knn.fit) + theme_bw() + labs(x = "k", y = "Accuracy")
+#plot(varImp(knn.fit, scale = F))
+```
+
+which at $k = 1$ it gives an accuracy of $96.7\%$.
+
+# Tree
+
+## Decision Trees
+In this section I will use the validation set approach, so I split the data set in two subsets, training set and test set, which they contains respectively the $70\%$ and $30\%$ of the original data set observations.
+
+```{r}
+set.seed(123)
+id <- sample(2, nrow(df.zoo), prob = c(0.7, 0.3), replace = TRUE)
+zoo.train <- df.zoo[id == 1, ]
+zoo.test <- df.zoo[id == 2, ]
+```
+
+I start to built a tree on the training set:
+
+```{r}
+library(tree)
+tree.fit <- tree(class_type ~., data = zoo.train)
+```
+
+and the built tree has the following shape:
+
+```{r}
+plot(tree.fit)
+text(tree.fit, pretty = 0, cex = 0.8)
+```
+
+Next, I evaluate it using the test set,
+
+```{r}
+treefit.pred <- predict(tree.fit, newdata = zoo.test, type = "class")
+treefit.confmx <- confusionMatrix(treefit.pred, zoo.test$class_type)
+treefit.confmx$overall
+```
+
+and it gives an accuracy of $86.2\%$.
+
+Since I have a small data set perhaps this approach is not suitable so I try to improve this result by using the Random Forest method that I use below.
+
+## Random Forest
+In this section I will find the number of predictors $mtry$, randomly chosen at each step, to consider
+to make a classification and, through the OOB observation, I can estimate the accuracy of the model.
+
+I use OOB method instead of CV because the error rate is calculated simultaneously with the model, so it gives a computational vantage.
+
+```{r}
+trCont.rf <- trainControl(method = "oob")
+
+set.seed(123)
+rf.fit <- train(class_type ~ ., data = df.zoo, method = "rf", trControl = trCont.rf, tuneLength = 10,
+                    ntree = 200)
+```
+
+```{r}
+rf.fit
+```
+It gives an accuracy value of $98\%$ at $mtry = 6$.
+
+```{r}
+plot(rf.fit$finalModel, main = "Error rates")
+legend("topright", legend = colnames(rf.fit$finalModel$err.rate),col=1:8,cex=0.5,fill=1:8)
+```
+
+In the beginning I considered 400 trees but, since the error rate do not decrease from ~200 onward, I set this last value in order to decrease the computational cost.
+
+
+Graphically, the accuracy trend looks like this:
+
+```{r}
+ggplot(rf.fit) + theme_bw() + labs(x = "mtry", y = "Accuracy")
+```
+
+In the following, I also check the importance of the predictors:
+
+```{r}
+plot(varImp(rf.fit, scale = T))
+```
+
+
+
+
+# Support Vector Machine
+
+In this section I will find the most appropriate kernel that best separates the various classes.
+
+Here I use the the repeated CV method as in the first case and I chose the linear kernel since the other options do not give a substantial improvement and are computationally more expensive.
+
+```{r}
+trCont.svm <- trainControl(method = "repeatedcv", number = 8, repeats = 3)
+
+set.seed(123)
+svm.fit <- train(class_type ~., data = df.zoo, method = "svmLinear", trControl = trCont.svm, 
+                     tuneLength = 5, scale = FALSE)
+```
+
+```{r}
+svm.fit$finalModel
+svm.fit$results
+```
+
+
+It gives an accuracy value of $97.1\%$ with the parameter $C=1$ so this model permits at most one observation to be in the wrong side of each hyperplane.
+
+# Conclusion
+
+S.V.M. and K.N.N. they have an accuracy value very close to that of Random Forest. This may be due to the fact that animals, which belong to the same class, have very similar characteristics.
+In addiction, changing the set.seed, the accuracy value of each methods change a bit. This probably happens because the data set is small.
